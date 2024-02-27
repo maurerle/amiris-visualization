@@ -2,15 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import time
-from pathlib import Path
 import logging
+import time
 from importlib import reload
+from pathlib import Path
 
 import pandas as pd
-from amirispy.scripts import amiris_cli
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError
+
 from config import db_uri
 
 # db_uri = "postgresql://opendata:opendata@localhost:5432/opendata?options=--search_path=public"
@@ -23,6 +22,8 @@ run_assume = True
 scenario_path = f"../amiris-examples/{scenario}"
 
 if run_amiris:
+    from amirispy.scripts import amiris_cli
+
     amiris_path = Path("./amiris-core_*-jar-with-dependencies.jar")
     amiris_paths = list(Path(amiris_path.parent).glob(amiris_path.name))
 

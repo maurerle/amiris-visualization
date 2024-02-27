@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Florian Maurer
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - name: Check reuse compliance
+      run: |
+        pip install reuse
+        reuse lint
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install black isort
+    - name: Lint with black and isort
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        black --check .
+        isort --check .

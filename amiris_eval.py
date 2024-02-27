@@ -5,13 +5,14 @@
 # now we can evaluate the runs
 
 import time
+from functools import partial
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
-from functools import partial
+
 from config import db_uri
 
 savefig = partial(plt.savefig, transparent=False, bbox_inches="tight")
@@ -116,7 +117,6 @@ plt.xticks(rotation=25)
 plt.legend()
 savefig("overview-dispatch.png")
 plt.show()
-
 
 
 # ------
