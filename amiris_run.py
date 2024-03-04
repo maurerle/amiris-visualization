@@ -50,7 +50,6 @@ if run_amiris:
         conn.execute(query)
 
     for output_file in (Path("scenario") / scenario).glob("*.csv"):
-        print(output_file)
         with open(output_file, "r") as f:
             df = pd.read_csv(f, sep=";", index_col="TimeStep", parse_dates=["TimeStep"])
         table_name = output_file.stem.lower()

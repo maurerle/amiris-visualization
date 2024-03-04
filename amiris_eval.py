@@ -4,112 +4,42 @@
 
 # now we can evaluate the runs
 
-import time
-from functools import partial
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import pandas as pd
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError
 
-from config import db_uri
+from queries import query_data
 
-savefig = partial(plt.savefig, transparent=False, bbox_inches="tight")
+simulation = "amiris_germany2019"
+from_date = "2019-02-01"
+to_date = "2019-12-31"
+# to_date = "2019-12-31"
+base_path = Path("output", simulation)
 
-engine = create_engine(db_uri)
+data = query_data(simulation, from_date, to_date)
+print(data.keys())
 
-sql = """
-SELECT ident, simulation,
-sum(round(CAST(value AS numeric), 2))  FILTER (WHERE variable = 'total_cost') as total_cost,
-sum(round(CAST(value AS numeric), 2)*1000)  FILTER (WHERE variable = 'total_volume') as total_volume,
-sum(round(CAST(value AS numeric), 2))  FILTER (WHERE variable = 'avg_price') as average_cost
-FROM kpis
-where variable in ('total_cost', 'total_volume', 'avg_price')
-and simulation in ('example_02d_eom_case', 'example_02d_ltm_case')
-group by simulation, ident ORDER BY simulation
-"""
-kpis = pd.read_sql(sql, engine)
-kpis["total_volume"] /= 1e9
-kpis["total_cost"] /= 1e6
-savefig = partial(plt.savefig, transparent=False, bbox_inches="tight")
-
-## Data preparation
-eom = kpis[kpis["ident"] == "EOM"]
-ltm = kpis[kpis["ident"] == "LTM_OTC"].reset_index()
-# ltm.loc[0, "average_cost"] = None
-xticks = list(eom["simulation"])
-# xlabels = [f"{i}%" for i in range(0, 101, 10)]
-xlabels = ["EOM", "EOM + LTM"]
 plt.style.use("seaborn-v0_8")
 
-fig, (ax1, ax2) = plt.subplots(2, 1)
-# Total Dispatch cost
-ax1.bar(eom["simulation"], eom["total_cost"], label="EOM")
-eom_ltm = eom[eom.simulation == "ltm_case10"]
-ax1.bar(
-    ltm["simulation"],
-    ltm["total_cost"],
-    bottom=eom_ltm["total_cost"],
-    label="LTM",
-)
-ax1.set_ylabel("Total dispatch cost \n per market [mill. $€$]")
-ax1.set_xticks(xticks, xlabels)
-ax1.legend()
-# Total Average Cost
-ax2.scatter(eom["simulation"], eom["average_cost"], label="EOM")
-ax2.scatter(ltm["simulation"], ltm["average_cost"], label="LTM")
-ax2.bar(eom["simulation"], eom["total_cost"] * 0)
-ax2.set_ylabel("Average cost \n for each scenario [$€/MWh$]")
-# ax2.set_xlabel("Fraction of base load traded on LTM in percent")
-ax2.set_xlabel("Selected electricity market design")
-ax2.set_xticks(xticks, xlabels)
-ax2.legend()
-savefig("overview-cost.png")
-plt.show()
+pt = data["dispatch_wind_offshore"]
+(pt["AMIRIS"] - pt["ASSUME"]).plot()
 
-# second plot
-simulation = "amiris_germany2019"
-sql = f"""
-SELECT
-"datetime" as "time",
-sum(power) AS "market_dispatch",
-market_id,
-um.technology,
-md.simulation
-FROM market_dispatch md
-join power_plant_meta um on um."index" = md.unit_id and um.simulation = md.simulation
-WHERE
-md.simulation = '{simulation}'
-GROUP BY 1, market_id, technology
-ORDER BY technology, market_id desc, 1
-"""
 
-df = pd.read_sql(sql, engine, index_col="time", parse_dates="time")
-# fig, ax = plt.subplots(figsize=(8,6))
-series = []
-for label, sub_df in df.groupby(["market_id", "technology"]):
-    lab = "-".join(label)
-    lab = lab.replace("LTM_OTC", "LTM")
+def savefig(path: str, *args, **kwargs):
+    output_path = Path(base_path, path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(output_path, *args, transparent=False, bbox_inches="tight", **kwargs)
 
-    if "lignite" not in lab and "nuclear" not in lab:
-        continue
-    group_sum = sub_df.market_dispatch.groupby("time").sum()
-    group_sum.name = lab
-    series.append(group_sum.resample("1h").ffill())
 
-ddf = pd.DataFrame(series)
-ddf = ddf.T.ffill()
-
-ddf = ddf[sorted(ddf.columns, reverse=True)]
-ddf = ddf.fillna(0)
-ddf /= 1e3
+ddf = data["assume_dispatch"]
 base = ddf[ddf.columns[0]] * 0
+plt.figure(figsize=(10,5))
 for col in ddf.columns:
     line = base + ddf[col]
-    c = (0.3, 0.2, 0.6, 0.8) if "nuclear" in col else "g"
-    alpha = 0.8 if "LTM" in col else 0.6
-    plt.fill_between(line.index, line, base, alpha=alpha, label=col, color=c)
+    # c = (0.3, 0.2, 0.6, 0.8) if "nuclear" in col else "g"
+    c = None
+    alpha = 0.6
+    plt.fill_between(line.index, line, base, alpha=alpha, label=col)
     base += ddf[col]
 plt.ylabel("Hourly dispatch power [$GW$]")
 plt.xlabel("Datetime")
@@ -118,39 +48,100 @@ plt.legend()
 savefig("overview-dispatch.png")
 plt.show()
 
+### price duration curve
+plt.figure(figsize=(10,5))
+data["preislinie_amiris"].plot()
+data["preislinie_assume"].plot()
+data["preislinie_entsoe"].plot()
 
-# ------
-query = f"""
-select 
-time_bucket('10800.000s',a."time") AS "time",
-avg("ASSUME Actual dispatch") as "ASSUME Actual dispatch", 
-avg("AMIRIS Awarded Energy") as "AMIRIS Awarded Energy",
-avg("AMIRIS Awarded Energy"- "ASSUME Actual dispatch") as "Difference", 
-a."agent"
-from
-(SELECT
-  index as "time",
-  avg(power) AS "ASSUME Actual dispatch",
-  SUBSTRING(unit,27) as "agent"
-FROM unit_dispatch
-WHERE
-  index BETWEEN '2020-12-31T23:49:05.945Z' AND '2021-01-01T21:05:40.528Z' AND
-  LOWER(simulation) = 'amiris_germany2019' AND
-  unit like 'VariableRenewableOperator_%'
-GROUP BY 1, unit, power
-ORDER BY 1) a
-join (SELECT
-  "TimeStep" as "time",
-  "AgentId"::text as "agent",
-  avg("AwardedEnergyInMWH") as "AMIRIS Awarded Energy"
-  --avg("OfferedEnergyInMWH"*1e3) as "OfferedEnergyInMWH",
-  --avg("ReceivedMoneyInEUR") as "ReceivedMoneyInEUR",
-  --avg("VariableCostsInEUR") as "VariableCostsInEUR"
-FROM amiris_germany2019.VariableRenewableOperator
-WHERE
-  "TimeStep" BETWEEN '2020-12-31T23:49:05.945Z' AND '2021-01-01T21:05:40.528Z'
-GROUP BY 1, "agent"
-ORDER BY 1) b on a.agent=b.agent and a.time=b.time
---where a.agent = '10'
-GROUP BY 1, a."agent"
-"""
+plt.xlabel("hours")
+plt.ylabel("price in [€/MW]")
+plt.legend()
+savefig("price_duration_curve.png")
+plt.show()
+
+plt.figure(figsize=(10,5))
+plt.scatter(data["preis_entsoe"], data["preis_assume"][:7993])
+plt.scatter(data["preis_entsoe"], data["preis_amiris"])
+plt.xlabel("historic price of ENTSO-E")
+plt.ylabel("simulation price at respective hour")
+plt.legend(["ASSUME", "AMIRIS"])
+plt.title("scatter plot of the simulation prices")
+savefig("price_scatter_curve.png")
+
+
+### dispatch duration curve
+
+techs = ["nuclear", "wind_offshore", "wind_onshore", "solar", "lignite", "natural gas"]
+data["ddcs"] = {}
+for tech in techs:
+    data["ddcs"][f"{tech}_entsoe"] = (
+        data["dispatch_entsoe"][tech]
+        .sort_values(ascending=False)
+        .reset_index(drop=True)
+    )
+
+    data["ddcs"][f"{tech}_assume"] = (
+        data[f"dispatch_{tech}"]["ASSUME"]
+        .sort_values(ascending=False)
+        .reset_index(drop=True)*1e3
+    )
+    data["ddcs"][f"{tech}_amiris"] = (
+        data[f"dispatch_{tech}"]["AMIRIS"]
+        .sort_values(ascending=False)
+        .reset_index(drop=True)*1e3
+    )
+
+for tech in techs:
+    plt.figure(figsize=(10,5))
+    (data["ddcs"][f"{tech}_entsoe"]/1e6).plot()
+    (data["ddcs"][f"{tech}_amiris"]/1e6).plot()
+    (data["ddcs"][f"{tech}_assume"]/1e6).plot()
+    plt.title(tech)
+    plt.xlabel("hour")
+    plt.ylabel("energy in GW")
+    plt.legend()
+    savefig(f"dispatch_duration_curve_{tech}.png")
+    plt.show()
+
+
+
+data["dispatch_wind_onshore"][100:400]["ASSUME"].plot()
+data["dispatch_entsoe"]["wind_onshore"][100:400].plot()
+
+data["dispatch_wind_offshore"][100:1000]["ASSUME"].plot()
+(data["assume_dispatch"]["wind_offshore"][100:1000]).plot()
+data["dispatch_entsoe"]["wind_offshore"][100:1000].plot()
+(data["assume_dispatch"]["wind_offshore"][100:1000]).plot()
+
+(data["assume_dispatch"]["lignite"][100:400] * 1e6).plot()
+data["dispatch_entsoe"]["lignite"][100:400].plot()
+
+res_amiris = data["preis_entsoe"]-data["preis_amiris"]
+res_assume = data["preis_entsoe"]-data["preis_assume"]
+mae_amiris = abs(res_amiris)
+mae_assume = abs(res_assume)
+mae_assume = mae_assume.fillna(0)
+print("MAE ASSUME",simulation, mae_assume.mean())
+print("MAE AMIRIS",simulation, mae_amiris.mean())
+
+rmse_amiris = np.sqrt(
+    ((res_amiris)**2).fillna(0).mean()
+)
+
+rmse_assume = np.sqrt(
+    ((res_assume)**2).fillna(0).mean()
+)
+
+print("RMSE ASSUME",simulation, rmse_assume.mean())
+print("RMSE AMIRIS",simulation, rmse_amiris.mean())
+
+plt.figure(figsize=(10,5))
+res_assume.resample("7d").mean().plot()
+res_amiris.resample("7d").mean().plot()
+plt.legend(["assume", "amiris"])
+plt.title("7d average of price residuals to ENTSO-E")
+plt.ylabel("price deviation in [€/MW]")
+plt.xlabel("time")
+savefig("price_deviation")
+plt.show()
