@@ -10,3 +10,4 @@ amiris-core*.jar
 fameSetup.yaml
 *.pb
 scenario/**/*.csv
+output/**/*.png
