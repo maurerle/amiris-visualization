@@ -11,9 +11,12 @@ import matplotlib.pyplot as plt
 from queries import query_data
 
 simulation = "amiris_germany2019"
-from_date = "2019-02-01"
+from_date = "2019-01-02"
 to_date = "2019-12-31"
-# to_date = "2019-12-31"
+
+# simulation = "amiris_germany2015"
+# from_date = "2015-01-02"
+# to_date = "2015-12-31"
 base_path = Path("output", simulation)
 
 data = query_data(simulation, from_date, to_date)
@@ -33,7 +36,7 @@ def savefig(path: str, *args, **kwargs):
 
 ddf = data["assume_dispatch"]
 base = ddf[ddf.columns[0]] * 0
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 for col in ddf.columns:
     line = base + ddf[col]
     # c = (0.3, 0.2, 0.6, 0.8) if "nuclear" in col else "g"
@@ -49,7 +52,7 @@ savefig("overview-dispatch.png")
 plt.show()
 
 ### price duration curve
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 data["preislinie_amiris"].plot()
 data["preislinie_assume"].plot()
 data["preislinie_entsoe"].plot()
@@ -60,9 +63,15 @@ plt.legend()
 savefig("price_duration_curve.png")
 plt.show()
 
-plt.figure(figsize=(10,5))
-plt.scatter(data["preis_entsoe"], data["preis_assume"][:7993])
-plt.scatter(data["preis_entsoe"], data["preis_amiris"])
+plt.figure(figsize=(10, 5))
+length = len(data["preis_entsoe"])
+plt.scatter(
+    data["preis_entsoe"][from_date:to_date], data["preis_assume"][from_date:to_date]
+)
+# plt.scatter(data["preis_entsoe"], data["preis_assume"][len(data["preis_assume"])-length:])
+plt.scatter(
+    data["preis_entsoe"][from_date:to_date], data["preis_amiris"][from_date:to_date]
+)
 plt.xlabel("historic price of ENTSO-E")
 plt.ylabel("simulation price at respective hour")
 plt.legend(["ASSUME", "AMIRIS"])
@@ -84,26 +93,27 @@ for tech in techs:
     data["ddcs"][f"{tech}_assume"] = (
         data[f"dispatch_{tech}"]["ASSUME"]
         .sort_values(ascending=False)
-        .reset_index(drop=True)*1e3
+        .reset_index(drop=True)
+        * 1e3
     )
     data["ddcs"][f"{tech}_amiris"] = (
         data[f"dispatch_{tech}"]["AMIRIS"]
         .sort_values(ascending=False)
-        .reset_index(drop=True)*1e3
+        .reset_index(drop=True)
+        * 1e3
     )
 
 for tech in techs:
-    plt.figure(figsize=(10,5))
-    (data["ddcs"][f"{tech}_entsoe"]/1e6).plot()
-    (data["ddcs"][f"{tech}_amiris"]/1e6).plot()
-    (data["ddcs"][f"{tech}_assume"]/1e6).plot()
+    plt.figure(figsize=(10, 5))
+    (data["ddcs"][f"{tech}_entsoe"] / 1e6).plot()
+    (data["ddcs"][f"{tech}_amiris"] / 1e6).plot()
+    (data["ddcs"][f"{tech}_assume"] / 1e6).plot()
     plt.title(tech)
     plt.xlabel("hour")
     plt.ylabel("energy in GW")
     plt.legend()
     savefig(f"dispatch_duration_curve_{tech}.png")
     plt.show()
-
 
 
 data["dispatch_wind_onshore"][100:400]["ASSUME"].plot()
@@ -117,26 +127,22 @@ data["dispatch_entsoe"]["wind_offshore"][100:1000].plot()
 (data["assume_dispatch"]["lignite"][100:400] * 1e6).plot()
 data["dispatch_entsoe"]["lignite"][100:400].plot()
 
-res_amiris = data["preis_entsoe"]-data["preis_amiris"]
-res_assume = data["preis_entsoe"]-data["preis_assume"]
+res_amiris = data["preis_entsoe"] - data["preis_amiris"]
+res_assume = data["preis_entsoe"] - data["preis_assume"]
 mae_amiris = abs(res_amiris)
 mae_assume = abs(res_assume)
 mae_assume = mae_assume.fillna(0)
-print("MAE ASSUME",simulation, mae_assume.mean())
-print("MAE AMIRIS",simulation, mae_amiris.mean())
+print("MAE ASSUME", simulation, mae_assume.mean())
+print("MAE AMIRIS", simulation, mae_amiris.mean())
 
-rmse_amiris = np.sqrt(
-    ((res_amiris)**2).fillna(0).mean()
-)
+rmse_amiris = np.sqrt(((res_amiris) ** 2).fillna(0).mean())
 
-rmse_assume = np.sqrt(
-    ((res_assume)**2).fillna(0).mean()
-)
+rmse_assume = np.sqrt(((res_assume) ** 2).fillna(0).mean())
 
-print("RMSE ASSUME",simulation, rmse_assume.mean())
-print("RMSE AMIRIS",simulation, rmse_amiris.mean())
+print("RMSE ASSUME", simulation, rmse_assume.mean())
+print("RMSE AMIRIS", simulation, rmse_amiris.mean())
 
-plt.figure(figsize=(10,5))
+plt.figure(figsize=(10, 5))
 res_assume.resample("7d").mean().plot()
 res_amiris.resample("7d").mean().plot()
 plt.legend(["assume", "amiris"])

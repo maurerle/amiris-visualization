@@ -14,6 +14,10 @@ to_date = "2019-12-31"
 
 
 def query_data(simulation: str, from_date: str, to_date: str):
+    VALID_COUNTRY = "DE_LU"
+    if int(from_date[0:4]) < 2018:
+        VALID_COUNTRY = "DE_AT_LU"
+    print(VALID_COUNTRY)
     # assume_dispatch
     data = {}
     sql = f"""
@@ -49,7 +53,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
 
     ddf = ddf[sorted(ddf.columns, reverse=True)]
     ddf = ddf.fillna(0)
-    data["assume_dispatch"] = ddf * 1e3 # MW to kWh
+    data["assume_dispatch"] = ddf * 1e3  # MW to kWh
 
     # amiris and assume dispatch
     query = f"""
@@ -89,9 +93,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
         text(query), engine, index_col="time", parse_dates="time"
     )
     for technology in dispatch_data["technology"].unique():
-        dd = dispatch_data[
-            dispatch_data["technology"] == technology
-        ]
+        dd = dispatch_data[dispatch_data["technology"] == technology]
         del dd["agent"]
         del dd["technology"]
         data[f"dispatch_{technology}"] = dd.resample("1h").sum()
@@ -112,8 +114,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
     c.technology
     from
     (
-    SELECT
-    time_bucket('3600.000s',index) AS "time",
+    SELECT time_bucket('3600.000s',index) AS "time",
     avg(power) AS "ASSUME Actual dispatch",
     unit,
     simulation
@@ -168,7 +169,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
     FROM query_generation
     WHERE
     index BETWEEN '{from_date}' AND '{to_date}' AND
-    country = 'DE_LU'
+    country = '{VALID_COUNTRY}'
     GROUP BY 1
     ORDER BY 1
     """
@@ -177,13 +178,12 @@ def query_data(simulation: str, from_date: str, to_date: str):
     )
 
     query = f"""
-    SELECT
-    time_bucket('3600.000s',index) AS "time",
+    SELECT time_bucket('3600.000s',index) AS "time",
     avg("0") AS "entsoe_price"
     FROM query_day_ahead_prices
     WHERE
     index BETWEEN '{from_date}' AND '{to_date}' AND
-    country = 'DE_LU'
+    country = '{VALID_COUNTRY}'
     GROUP BY 1
     ORDER BY 1
     """
@@ -196,8 +196,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
         by="entsoe_price", ascending=False
     ).reset_index()["entsoe_price"]
 
-    query = f"""SELECT
-    time_bucket('3600.000s',"product_start") AS "time",
+    query = f"""SELECT time_bucket('3600.000s',"product_start") AS "time",
     avg(price) AS "assume_price"
     FROM market_meta
     WHERE ("simulation" LIKE '{simulation}') AND market_id = 'Market_1' AND 
@@ -216,8 +215,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
     # Ausgewählte Wochenscheiben der Preise
 
     query = f"""
-    SELECT
-    time_bucket('3600.000s',"TimeStep") AS "time",
+    SELECT time_bucket('3600.000s',"TimeStep") AS "time",
     avg("ElectricityPriceInEURperMWH") as "amiris_price"
     FROM {simulation}.DayAheadMarketSingleZone
     WHERE
