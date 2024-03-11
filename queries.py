@@ -4,9 +4,6 @@ from sqlalchemy import create_engine, text
 from config import db_uri, entsoe_uri
 
 ###########################
-entsoe_engine = create_engine(entsoe_uri)
-
-engine = create_engine(db_uri)
 
 simulation = "amiris_germany2019"
 from_date = "2019-01-01"
@@ -14,9 +11,14 @@ to_date = "2019-12-31"
 
 
 def query_data(simulation: str, from_date: str, to_date: str):
+    entsoe_engine = create_engine(entsoe_uri)
+    engine = create_engine(db_uri)
+
     VALID_COUNTRY = "DE_LU"
     if int(from_date[0:4]) < 2018:
         VALID_COUNTRY = "DE_AT_LU"
+    if "austria" in simulation:
+        VALID_COUNTRY = "AT"
     print(VALID_COUNTRY)
     # assume_dispatch
     data = {}
@@ -147,24 +149,64 @@ def query_data(simulation: str, from_date: str, to_date: str):
     amiris_dispatch = pd.read_sql(
         text(query), engine, index_col="time", parse_dates="time"
     )
-    for technology in ["nuclear", "lignite", "hard coal", "natural gas"]:
+    for technology in ["nuclear", "lignite", "hard coal", "natural gas", "oil"]:
         dd = amiris_dispatch[amiris_dispatch["technology"] == technology]
         del dd["agent"]
         del dd["technology"]
         data[f"dispatch_{technology}"] = dd.resample("1h").sum()
+
+    # storage dispatch
+    query = f"""
+SELECT time_bucket('3600.000s',"TimeStep") AS "time",
+avg("AwardedDischargeEnergyInMWH")-avg("AwardedChargeEnergyInMWH") as "storage_amiris",
+avg("StoredEnergyInMWH")*1e3 as "soc_amiris"
+FROM {simulation}.StorageTrader
+WHERE
+  "TimeStep" BETWEEN '{from_date}' AND '{to_date}'
+GROUP BY 1
+ORDER BY 1"""
+    amiris_storage = pd.read_sql(
+        text(query), engine, index_col="time", parse_dates="time"
+    )
+
+    query = f"""
+SELECT time_bucket('3600.000s',"start_time") AS "time",
+  avg(accepted_volume) AS "assume_storage"
+FROM market_orders
+WHERE
+  start_time BETWEEN '{from_date}' AND '{to_date}' AND
+  unit_id like 'StorageTrader%' AND
+  simulation = '{simulation}'
+GROUP BY 1, unit_id, market_id
+ORDER BY 1
+"""
+    assume_storage = pd.read_sql(
+        text(query), engine, index_col="time", parse_dates="time"
+    )
+
+    data["dispatch_storage"] = pd.concat(
+        [amiris_storage["storage_amiris"], assume_storage["assume_storage"]], axis=1
+    )
+    data["dispatch_storage"].columns = ["AMIRIS", "ASSUME"]
+    data["dispatch_storage"].fillna(0, inplace=True)
+
+    # entsoe dispatch
 
     query = f"""
     SELECT
     time_bucket('3600.000s',index) AS "time",
     avg(nuclear*1e3) as nuclear,
     avg("fossil_hard_coal"*1e3) as coal,
-    avg(("hydro_run-of-river_and_poundage"+hydro_water_reservoir)*1e3) as water,
+    avg(("hydro_run-of-river_and_poundage"+hydro_water_reservoir)*1e3) as hydro,
     avg(biomass*1e3) as bio,
     avg(("fossil_coal-derived_gas"+"fossil_gas")*1e3) as "natural gas",
-    avg((fossil_oil+coalesce(fossil_oil_shale,0)+coalesce(fossil_peat,0)+"fossil_brown_coal/lignite")*1e3) as lignite,
+    avg("fossil_brown_coal/lignite" *1e3) as lignite,
+    avg((fossil_oil+coalesce(fossil_oil_shale,0)+coalesce(fossil_peat,0))*1e3) as oil,
+    avg(("fossil_hard_coal")*1e3) as "hard coal",
     avg(("wind_offshore")*1e3) as wind_offshore,
     avg(("wind_onshore")*1e3) as wind_onshore,
     avg(solar*1e3) as solar,
+    avg((hydro_pumped_storage*1e3)) as "storage",
     avg((geothermal+other+waste)*1e3) as others
     FROM query_generation
     WHERE
