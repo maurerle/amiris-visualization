@@ -8,6 +8,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from queries import query_data
 
@@ -264,6 +265,24 @@ def plot_all_plots(simulation, from_date, to_date, data):
         savefig("sample-price2")
 
 
+def results_to_csv(results):
+    for key, value in results.items():
+        path = Path("output/csv", key)
+        path.mkdir(parents=True, exist_ok=True)
+        for key, value in value.items():
+            val_path = Path(path, key + ".csv")
+            value.to_csv(val_path)
+
+
+def results_from_csv(output_csv_path: str = "output/csv"):
+    results = {}
+    for path in Path(output_csv_path).glob("*"):
+        if path.is_dir():
+            results[path.name] = {}
+            for csv in path.glob("*.csv"):
+                results[path.name][csv.stem] = pd.read_csv(csv)
+    return results
+
 if __name__ == "__main__":
     simulations = [
         "amiris_germany2019_3",
@@ -278,18 +297,22 @@ if __name__ == "__main__":
         "amiris_austria2019_2",
     ]
 
-    # simulation = "amiris_germany2018"
-    # from_date = "2018-01-02"
-    # to_date = "2018-12-31"
+    # simulation = "amiris_germany2019"
+    # from_date = "2019-01-02"
+    # to_date = "2019-12-31"
     # data = query_data(simulation, from_date, to_date)
     # plot_all_plots(simulation, from_date, to_date, data)
-    results = {}
+    results = results_from_csv()
 
+    
     for simulation in simulations:
         year = simulation[14:18]
 
         from_date = f"{year}-01-18"
         to_date = f"{year}-12-25"
-        data = query_data(simulation, from_date, to_date)
-        results[simulation] = data
-        plot_all_plots(simulation, from_date, to_date, data)
+        if not results[simulation]:
+            data = query_data(simulation, from_date, to_date)
+            results[simulation] = data
+        plot_all_plots(simulation, from_date, to_date, results[simulation])
+
+    # results_to_csv(results)
