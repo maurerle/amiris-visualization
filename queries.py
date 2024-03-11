@@ -1,6 +1,7 @@
+from functools import lru_cache
+
 import pandas as pd
 from sqlalchemy import create_engine, text
-from functools import lru_cache
 
 from config import db_uri, entsoe_uri
 

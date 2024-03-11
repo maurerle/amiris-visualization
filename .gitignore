@@ -11,3 +11,5 @@ fameSetup.yaml
 *.pb
 scenario/**/*.csv
 output/**/*.png
+output/**/*.pdf
+output/**/*.svg

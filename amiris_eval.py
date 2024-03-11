@@ -22,11 +22,12 @@ def plot_all_plots(simulation, from_date, to_date, data):
     def savefig(path: str, plot=False, *args, **kwargs):
         output_path = Path(base_path, f"{path}.svg")
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(output_path, *args, transparent=False, bbox_inches="tight", **kwargs)
+        plt.savefig(
+            output_path, *args, transparent=False, bbox_inches="tight", **kwargs
+        )
         if plot:
             plt.show()
         plt.close()
-
 
     # pt = data["dispatch_wind_onshore"]
     # (pt["AMIRIS"] - pt["ASSUME"]).plot()
@@ -50,7 +51,7 @@ def plot_all_plots(simulation, from_date, to_date, data):
         "solar",
         "lignite",
         "natural gas",
-        "hard coal"
+        "hard coal",
         "oil",
         "hydro",
     ]
@@ -283,6 +284,7 @@ def results_from_csv(output_csv_path: str = "output/csv"):
                 results[path.name][csv.stem] = pd.read_csv(csv)
     return results
 
+
 if __name__ == "__main__":
     simulations = [
         "amiris_germany2019_3",
@@ -304,7 +306,6 @@ if __name__ == "__main__":
     # plot_all_plots(simulation, from_date, to_date, data)
     results = results_from_csv()
 
-    
     for simulation in simulations:
         year = simulation[14:18]
 
