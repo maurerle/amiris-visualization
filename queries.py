@@ -1,25 +1,25 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
+from functools import lru_cache
 
 from config import db_uri, entsoe_uri
 
 ###########################
 
-simulation = "amiris_germany2019"
-from_date = "2019-01-01"
-to_date = "2019-12-31"
+simulation = "amiris_germany2018"
+from_date = "2018-01-01"
+to_date = "2018-12-31"
 
 
+@lru_cache(maxsize=32)
 def query_data(simulation: str, from_date: str, to_date: str):
     entsoe_engine = create_engine(entsoe_uri)
     engine = create_engine(db_uri)
 
-    VALID_COUNTRY = "DE_LU"
-    if int(from_date[0:4]) < 2018:
-        VALID_COUNTRY = "DE_AT_LU"
+    VALID_COUNTRY = "('DE_LU', 'DE_AT_LU')"
     if "austria" in simulation:
-        VALID_COUNTRY = "AT"
-    print(VALID_COUNTRY)
+        VALID_COUNTRY = "('AT')"
+    print(simulation)
     # assume_dispatch
     data = {}
     sql = f"""
@@ -211,7 +211,7 @@ ORDER BY 1
     FROM query_generation
     WHERE
     index BETWEEN '{from_date}' AND '{to_date}' AND
-    country = '{VALID_COUNTRY}'
+    country in {VALID_COUNTRY}
     GROUP BY 1
     ORDER BY 1
     """
@@ -225,7 +225,7 @@ ORDER BY 1
     FROM query_day_ahead_prices
     WHERE
     index BETWEEN '{from_date}' AND '{to_date}' AND
-    country = '{VALID_COUNTRY}'
+    country in {VALID_COUNTRY}
     GROUP BY 1
     ORDER BY 1
     """

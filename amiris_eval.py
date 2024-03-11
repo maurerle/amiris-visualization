@@ -14,9 +14,8 @@ from queries import query_data
 plt.style.use("seaborn-v0_8")
 
 
-def plot_all_plots(simulation, from_date, to_date):
+def plot_all_plots(simulation, from_date, to_date, data):
     base_path = Path("output", simulation)
-    data = query_data(simulation, from_date, to_date)
 
     # set plot to true here to see plots inline
     def savefig(path: str, plot=False, *args, **kwargs):
@@ -50,6 +49,7 @@ def plot_all_plots(simulation, from_date, to_date):
         "solar",
         "lignite",
         "natural gas",
+        "hard coal"
         "oil",
         "hydro",
     ]
@@ -141,9 +141,9 @@ def plot_all_plots(simulation, from_date, to_date):
     print("MAE AMIRIS", simulation, mae_amiris.mean())
     print("MAE ASSUME", simulation, mae_assume.mean())
 
-    print(f"MEAN AMIRIS {simulation}  {preis_amiris.mean():.2f}")
-    print(f"MEAN ASSUME {simulation}  {preis_assume.mean():.2f}")
-    print(f"MEAN Entso-E {simulation}  {preis_entsoe.mean():.2f}")
+    print(f"mean AMIRIS {simulation}  {preis_amiris.mean():.2f}")
+    print(f"mean ASSUME {simulation}  {preis_assume.mean():.2f}")
+    print(f"mean ENTSO-E {simulation}  {preis_entsoe.mean():.2f}")
 
     rmse_amiris = np.sqrt(((res_amiris) ** 2).fillna(0).mean())
 
@@ -187,6 +187,9 @@ def plot_all_plots(simulation, from_date, to_date):
         % table_str
     )
     print(table_new)
+    output_path = Path(base_path, "table.tex")
+    with open(output_path, "w") as f:
+        f.write(table_new)
 
     ddf = data["assume_dispatch"][4000:4500]
     df = ddf
@@ -226,14 +229,15 @@ def plot_all_plots(simulation, from_date, to_date):
         techs = ["nuclear", "hard coal", "lignite", "natural gas", "oil", "hydro"]
         for tech in techs:
             plt.figure(figsize=(10, 5))
-
-            data[f"dispatch_{tech}"]["AMIRIS"][start:end].plot()
-            data[f"dispatch_{tech}"]["ASSUME"][start:end].plot()
-            (data["dispatch_entsoe"][tech] / 1e3)[start:end].plot()
-            plt.legend(["AMIRIS", "ASSUME", "ENTSO-E"])
-            plt.xlabel("time")
-            plt.ylabel("power in MW")
-            savefig(f"sample-dispatch-{tech}")
+            dispatch_entsoe = (data["dispatch_entsoe"][tech] / 1e3)[start:end].dropna()
+            if len(dispatch_entsoe) > 0:
+                data[f"dispatch_{tech}"]["AMIRIS"][start:end].plot()
+                data[f"dispatch_{tech}"]["ASSUME"][start:end].plot()
+                dispatch_entsoe.plot()
+                plt.legend(["AMIRIS", "ASSUME", "ENTSO-E"])
+                plt.xlabel("time")
+                plt.ylabel("power in MW")
+                savefig(f"sample-dispatch-{tech}")
 
         start = "2019-01-19"
         end = "2019-02-04"
@@ -261,10 +265,6 @@ def plot_all_plots(simulation, from_date, to_date):
 
 
 if __name__ == "__main__":
-    # simulation = "amiris_germany2019"
-    # from_date = "2019-01-02"
-    # to_date = "2019-12-31"
-
     simulations = [
         "amiris_germany2019_3",
         "amiris_germany2019",
@@ -278,26 +278,18 @@ if __name__ == "__main__":
         "amiris_austria2019_2",
     ]
 
-    simulation = "amiris_germany2019_3"
-    from_date = "2019-01-02"
-    to_date = "2019-12-31"
-
-    # simulation = "amiris_germany2017_3"
-    # from_date = "2017-01-02"
-    # to_date = "2017-08-06"
-
-    # simulation = "amiris_germany2015"
-    # from_date = "2015-01-05"
-    # to_date = "2015-12-31"
-
-    plot_all_plots(simulation, from_date, to_date)
+    # simulation = "amiris_germany2018"
+    # from_date = "2018-01-02"
+    # to_date = "2018-12-31"
+    # data = query_data(simulation, from_date, to_date)
+    # plot_all_plots(simulation, from_date, to_date, data)
+    results = {}
 
     for simulation in simulations:
         year = simulation[14:18]
 
         from_date = f"{year}-01-18"
-        to_date = f"{year}-12-30"
-        try:
-            plot_all_plots(simulation, from_date, to_date)
-        except Exception as e:
-            print("Error plotting", simulation, e)
+        to_date = f"{year}-12-25"
+        data = query_data(simulation, from_date, to_date)
+        results[simulation] = data
+        plot_all_plots(simulation, from_date, to_date, data)
