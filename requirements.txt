@@ -2,7 +2,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-assume-framework
+# assume-framework
 # amiris-py
-git+https://gitlab.com/dlr-ve/esy/amiris/amiris-py@main
 matplotlib
+streamlit
+pandas
+sphinx
+cattrs
+attrs
+streamlit-echarts
+tables
+streamlit-option-menu
+pyecharts
+qrcode
+streamlit-extras

@@ -13,3 +13,4 @@ scenario/**/*.csv
 output/**/*.png
 output/**/*.pdf
 output/**/*.svg
+.idea/
