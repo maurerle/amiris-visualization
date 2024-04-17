@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 German Aerospace Center
+#
+# SPDX-License-Identifier: Apache-2.0
 from enum import Enum, auto
 from json import dumps
 from typing import Dict, Union

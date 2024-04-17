@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2024 German Aerospace Center
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import streamlit as st
 import pathlib as pt
 from dashboard.layout.sidebar import create_default_sidebar

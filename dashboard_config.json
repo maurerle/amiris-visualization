@@ -1,26 +1,23 @@
 {
-  "dashboard_label": "AMIRIS-ASSUME Dashboard",
+  "dashboard_label": "Dashboard",
   "enable_darkmode_toggle": false,
-  "enable_references": true,
+  "enable_references": false,
   "references_icon": "list",
   "sidemenu_icon": "layout-text-window-reverse",
   "data_path": "./data/compare.hdf5",
-  "qrcode_url": "https://gitlab.com/dlr-ve/esy/amiris/amiris-plot",
-  "qrcode_url_text": "amiris-assume-plot",
+  "qrcode_url": "https://amiris-assume.streamlit.app",
+  "qrcode_url_text": "AMIRIS ASSUME",
   "logo_path": "./images/logo/",
   "logo_size": [
-    150,
-    100
+    316,
+    150
   ],
   "tabs": [
     {
       "id": "series",
-      "label": "Series",
+      "label": "Plots",
       "icon": "bar-chart-line",
       "display_enabled": false
     }
-  ],
-  "references": [
-    "doi: 10.5281/zenodo.5726737"
   ]
 }

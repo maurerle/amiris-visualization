@@ -1,7 +1,10 @@
-import numpy as np
-import pandas as pd
+# SPDX-FileCopyrightText: 2024 German Aerospace Center
+#
+# SPDX-License-Identifier: Apache-2.0
 import json
 import pathlib as pt
+
+import pandas as pd
 
 
 def get_meta(store: object, hdfpackage_path: str) -> dict:

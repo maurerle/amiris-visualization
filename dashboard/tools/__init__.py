@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: German Aerospace Center <amiris@dlr.de>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 from .configuration import DashboardConfiguration, TabData, load_plots_config
 from .general import load_tab_modules
 from .options import (

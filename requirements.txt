@@ -1,11 +1,11 @@
-# SPDX-FileCopyrightText: Florian Maurer
+# SPDX-FileCopyrightText: Florian Maurer and German Aerospace Center
 #
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: CC0-1.0
 
 # assume-framework
 # amiris-py
 matplotlib
-streamlit
+streamlit>=1.33.0
 pandas
 sphinx
 cattrs

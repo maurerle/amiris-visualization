@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 German Aerospace Center
+#
+# SPDX-License-Identifier: Apache-2.0
 import streamlit as st
 from markdownlit import mdlit
 import pathlib as pt
@@ -35,8 +38,8 @@ def add_contact_widget(dash_cfg):
             break
 
     if st.session_state["active_tab"] == itab.id:
-        st.header(itab.label)
-        mdlit("".join(pt.Path("./contact_info.md").open().readlines()))
+        # st.header(itab.label)
+        mdlit("".join(pt.Path("./dashboard_info.md").open().readlines()))
 
 
 def add_reference_widget(dash_cfg):
