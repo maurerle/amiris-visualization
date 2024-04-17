@@ -9,6 +9,7 @@ config.py
 amiris-core*.jar
 fameSetup.yaml
 *.pb
+*.pptx
 scenario/**/*.csv
 output/**/*.png
 output/**/*.pdf
