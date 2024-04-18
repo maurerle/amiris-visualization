@@ -10,8 +10,6 @@ amiris-core*.jar
 fameSetup.yaml
 *.pb
 *.pptx
-scenario/**/*.csv
-output/**/*.png
-output/**/*.pdf
-output/**/*.svg
+scenario_run/output
+scenario_run/scenario
 .idea/
