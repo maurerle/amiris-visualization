@@ -15,7 +15,7 @@
   "tabs": [
     {
       "id": "series",
-      "label": "Plots",
+      "label": "Timeseries",
       "icon": "bar-chart-line",
       "display_enabled": false
     }
