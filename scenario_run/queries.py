@@ -60,7 +60,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
 
     # amiris and assume dispatch
     query = f"""
-    select time_bucket('3600.000s',a."time") AS "time",
+    select public.time_bucket('3600.000s',a."time") AS "time",
     avg("ASSUME Actual dispatch") as "ASSUME",
     avg("AMIRIS Awarded Energy") as "AMIRIS",
     c."technology",
@@ -102,7 +102,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
         data[f"dispatch_{technology}"] = dd.resample("1h").sum()
 
     query = f"""
-    select time_bucket('3600.000s',a."time") AS "time",
+    select public.time_bucket('3600.000s',a."time") AS "time",
     avg("ASSUME Actual dispatch") as "ASSUME", 
     avg("AMIRIS Awarded Energy") as "AMIRIS",
     --avg("AMIRIS Awarded Energy"- "ASSUME Actual dispatch") as "Difference",
@@ -117,7 +117,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
     c.technology
     from
     (
-    SELECT time_bucket('3600.000s',index) AS "time",
+    SELECT public.time_bucket('3600.000s',index) AS "time",
     avg(power) AS "ASSUME Actual dispatch",
     unit,
     simulation
@@ -133,7 +133,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
     --where c.technology = 'oil'
     group by 1, agent, c.technology, c.simulation) a
     join (SELECT
-    time_bucket('3600.000s',"TimeStep") AS "time",
+    public.time_bucket('3600.000s',"TimeStep") AS "time",
     substring("AgentId"::text,3) as "agent",
     avg("AwardedEnergyInMWH") as "AMIRIS Awarded Energy"
     --avg("OfferedEnergyInMWH"*1e3) as "OfferedEnergyInMWH",
@@ -158,7 +158,7 @@ def query_data(simulation: str, from_date: str, to_date: str):
 
     # storage dispatch
     query = f"""
-SELECT time_bucket('3600.000s',"TimeStep") AS "time",
+SELECT public.time_bucket('3600.000s',"TimeStep") AS "time",
 avg("AwardedDischargeEnergyInMWH")-avg("AwardedChargeEnergyInMWH") as "storage_amiris",
 avg("StoredEnergyInMWH")*1e3 as "soc_amiris"
 FROM {simulation}.StorageTrader
@@ -171,7 +171,7 @@ ORDER BY 1"""
     )
 
     query = f"""
-SELECT time_bucket('3600.000s',"start_time") AS "time",
+SELECT public.time_bucket('3600.000s',"start_time") AS "time",
   avg(accepted_volume) AS "assume_storage"
 FROM market_orders
 WHERE
@@ -195,7 +195,7 @@ ORDER BY 1
 
     query = f"""
     SELECT
-    time_bucket('3600.000s',index) AS "time",
+    public.time_bucket('3600.000s',index) AS "time",
     avg(nuclear*1e3) as nuclear,
     avg("fossil_hard_coal"*1e3) as coal,
     avg(("hydro_run-of-river_and_poundage"+hydro_water_reservoir)*1e3) as hydro,
@@ -221,7 +221,7 @@ ORDER BY 1
     )
 
     query = f"""
-    SELECT time_bucket('3600.000s',index) AS "time",
+    SELECT public.time_bucket('3600.000s',index) AS "time",
     avg("0") AS "entsoe_price"
     FROM query_day_ahead_prices
     WHERE
@@ -239,7 +239,7 @@ ORDER BY 1
         by="entsoe_price", ascending=False
     ).reset_index()["entsoe_price"]
 
-    query = f"""SELECT time_bucket('3600.000s',"product_start") AS "time",
+    query = f"""SELECT public.time_bucket('3600.000s',"product_start") AS "time",
     avg(price) AS "assume_price"
     FROM market_meta
     WHERE ("simulation" LIKE '{simulation}') AND market_id = 'Market_1' AND 
@@ -258,7 +258,7 @@ ORDER BY 1
     # Ausgewählte Wochenscheiben der Preise
 
     query = f"""
-    SELECT time_bucket('3600.000s',"TimeStep") AS "time",
+    SELECT public.time_bucket('3600.000s',"TimeStep") AS "time",
     avg("ElectricityPriceInEURperMWH") as "amiris_price"
     FROM {simulation}.DayAheadMarketSingleZone
     WHERE

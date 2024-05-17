@@ -4,18 +4,18 @@
 
 # now we can evaluate the runs
 
+import pickle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from queries import query_data
 
 plt.style.use("seaborn-v0_8")
 
 
-def plot_all_plots(simulation, from_date, to_date, data):
+def plot_all_plots(simulation, from_date, to_date, data, latex_table=False):
     base_path = Path("output", simulation)
 
     # set plot to true here to see plots inline
@@ -104,6 +104,7 @@ def plot_all_plots(simulation, from_date, to_date, data):
 
         savefig("dispatch_wind_lignite")
     # price scatter plot
+    print(data["preis_entsoe"].index)
     preis_entsoe = data["preis_entsoe"][from_date:to_date]
     preis_amiris = data["preis_amiris"][from_date:to_date]
     preis_assume = data["preis_assume"][from_date:to_date]
@@ -112,6 +113,7 @@ def plot_all_plots(simulation, from_date, to_date, data):
     # preis_entsoe = preis_entsoe[preis_entsoe>=0]
 
     # Pearson correlation coefficient
+    preis_entsoe = preis_entsoe.reindex(preis_amiris.index, fill_value=0)
     corref_amiris = np.corrcoef(preis_entsoe, preis_amiris)[0, 1]
     corref_assume = np.corrcoef(preis_entsoe, preis_assume)[0, 1]
     print(f"CORR COEFF AMIRIS {simulation}  {corref_amiris:.4f}")
@@ -119,19 +121,23 @@ def plot_all_plots(simulation, from_date, to_date, data):
 
     max_entsoe = preis_entsoe.max()
     min_entsoe = preis_entsoe.min()
+    min_entsoe = preis_amiris.min()
     plt.figure(figsize=(8, 8))
-    length = len(data["preis_entsoe"])
     plt.scatter(preis_entsoe, preis_amiris, s=8)
     plt.scatter(preis_entsoe, preis_assume, s=8)
     plt.plot([min_entsoe, max_entsoe], [min_entsoe, max_entsoe], "k--", linewidth=1)
     plt.xlabel("historic price of ENTSO-E [€/MWh]")
     plt.ylabel("simulation price at respective hour [€/MWh]")
+    plt.gca().axis("equal")
+    plt.gca().set_aspect('equal', adjustable='box')
     plt.legend(
         [
             f"AMIRIS\t    corr coef: {corref_amiris:.4f}".expandtabs(),
             f"ASSUME\t corr coef: {corref_assume:.4f}".expandtabs(),
         ]
     )
+    plt.yticks(np.arange(min_entsoe // 20 * 20, max_entsoe + 1 // 20 * 20, 20))
+    plt.xticks(np.arange(preis_entsoe.min() // 20 * 20, max_entsoe + 1 // 20 * 20, 20))
     # plt.title("scatter plot of the simulation prices")
     savefig("price_scatter_curve")
     res_amiris = preis_entsoe - preis_amiris
@@ -170,31 +176,32 @@ def plot_all_plots(simulation, from_date, to_date, data):
     plt.xlabel("time")
     savefig("price_deviation")
 
-    table_str = f"""
-            ~ & MAE & RMSE & max & min & mean & std \\\\ \hline
-            AMIRIS & {mae_amiris.mean():.2f} & {rmse_assume.mean():.2f} & {preis_amiris.max():.2f} & {preis_amiris.min():.2f} & {preis_amiris.mean():.2f} & {preis_amiris.std():.2f}\\\\ \hline
-            ASSUME & {mae_assume.mean():.2f} & {rmse_amiris.mean():.2f} & {preis_assume.max():.2f} & {preis_assume.min():.2f} & {preis_assume.mean():.2f} & {preis_assume.std():.2f}\\\\ \hline
-            Historic & 0 & 0 & {preis_entsoe.max():.2f} & {preis_entsoe.min():.2f} & {preis_entsoe.mean():.2f} & {preis_entsoe.std():.2f}\\\\
-    """
 
-    table_new = (
+    if latex_table:
+        table_str = f"""
+                ~ & MAE & RMSE & max & min & mean & std \\\\ \hline
+                AMIRIS & {mae_amiris.mean():.2f} & {rmse_assume.mean():.2f} & {preis_amiris.max():.2f} & {preis_amiris.min():.2f} & {preis_amiris.mean():.2f} & {preis_amiris.std():.2f}\\\\ \hline
+                ASSUME & {mae_assume.mean():.2f} & {rmse_amiris.mean():.2f} & {preis_assume.max():.2f} & {preis_assume.min():.2f} & {preis_assume.mean():.2f} & {preis_assume.std():.2f}\\\\ \hline
+                Historic & 0 & 0 & {preis_entsoe.max():.2f} & {preis_entsoe.min():.2f} & {preis_entsoe.mean():.2f} & {preis_entsoe.std():.2f}\\\\
         """
-    \\begin{table}[!ht]
-        \centering
-        \\begin{tabular}{l|l|l|l|l|l|l}%s   \end{tabular}
-        \caption{Quantitative results of the price fit towards the historic dataset of Germany 2019}
-        \label{tab:quantitative results}
-    \end{table}
-    """
-        % table_str
-    )
-    print(table_new)
-    output_path = Path(base_path, "table.tex")
-    with open(output_path, "w") as f:
-        f.write(table_new)
+
+        table_new = (
+            """
+        \\begin{table}[!ht]
+            \centering
+            \\begin{tabular}{l|l|l|l|l|l|l}%s   \end{tabular}
+            \caption{Quantitative results of the price fit towards the historic dataset of Germany 2019}
+            \label{tab:quantitative results}
+        \end{table}
+        """
+            % table_str
+        )
+        print(table_new)
+        output_path = Path(base_path, "table.tex")
+        with open(output_path, "w") as f:
+            f.write(table_new)
 
     ddf = data["assume_dispatch"][4000:4500]
-    df = ddf
     ddf = ddf.reindex(
         [
             "biomass",
@@ -272,31 +279,19 @@ def results_to_csv(results):
         path.mkdir(parents=True, exist_ok=True)
         for key, value in value.items():
             val_path = Path(path, key + ".csv")
+            if isinstance(value, dict):
+                value = pd.DataFrame(value)
             value.to_csv(val_path)
-
-
-def results_from_csv(output_csv_path: str = "output/csv"):
-    results = {}
-    for path in Path(output_csv_path).glob("*"):
-        if path.is_dir():
-            results[path.name] = {}
-            for csv in path.glob("*.csv"):
-                results[path.name][csv.stem] = pd.read_csv(csv)
-    return results
 
 
 if __name__ == "__main__":
     simulations = [
-        "amiris_germany2019_3",
-        "amiris_germany2019",
-        "amiris_germany2018_3",
-        "amiris_germany2018",
-        "amiris_germany2017_3",
-        "amiris_germany2017",
-        "amiris_germany2015_3",
         "amiris_germany2015",
+        "amiris_germany2016",
+        "amiris_germany2017",
+        "amiris_germany2018",
+        "amiris_germany2019",
         "amiris_austria2019",
-        "amiris_austria2019_2",
     ]
 
     # simulation = "amiris_germany2019"
@@ -304,16 +299,25 @@ if __name__ == "__main__":
     # to_date = "2019-12-31"
     # data = query_data(simulation, from_date, to_date)
     # plot_all_plots(simulation, from_date, to_date, data)
-    results = results_from_csv()
+    results_pickle_path = Path("results.pkl")
+    if results_pickle_path.is_file():
+        with open(results_pickle_path, "rb") as f:
+            results = pickle.load(f)
+    else:
+        results = {}
 
     for simulation in simulations:
         year = simulation[14:18]
 
-        from_date = f"{year}-01-18"
-        to_date = f"{year}-12-25"
-        if not results[simulation]:
+        from_date = f"{year}-01-02"
+        to_date = f"{year}-12-30"
+        if not results.get(simulation):
+            print(f"querying data for {simulation}")
             data = query_data(simulation, from_date, to_date)
             results[simulation] = data
         plot_all_plots(simulation, from_date, to_date, results[simulation])
 
-    # results_to_csv(results)
+    with open(results_pickle_path, "wb") as f:
+        pickle.dump(results, f)
+
+    results_to_csv(results)
