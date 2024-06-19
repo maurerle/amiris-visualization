@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Florian Maurer
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from functools import lru_cache
 
 import pandas as pd

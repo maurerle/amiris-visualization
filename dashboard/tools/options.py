@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2024 German Aerospace Center
 #
 # SPDX-License-Identifier: Apache-2.0
+
 import collections.abc
 
 import streamlit as st

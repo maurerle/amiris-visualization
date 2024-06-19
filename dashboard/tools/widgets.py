@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2024 German Aerospace Center
 #
 # SPDX-License-Identifier: Apache-2.0
+
 import pathlib as pt
 from base64 import b64encode
 from io import BytesIO

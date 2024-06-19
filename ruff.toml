@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Florian Maurer
+#
+# SPDX-License-Identifier: Apache-2.0
+
 target-version = "py310"
 src = [".", "scenario_run", "dashboard", "tabs"]
 

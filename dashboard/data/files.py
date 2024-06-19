@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2024 German Aerospace Center
 #
 # SPDX-License-Identifier: Apache-2.0
+
 from dashboard.data import Column, Model, TimeFormat
 from dashboard.data.csv_file import CsvFile
 

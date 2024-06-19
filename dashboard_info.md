@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: 2024 Florian Maurer and German Aerospace Center
 
 SPDX-License-Identifier: Apache-2.0
 -->
+
 # ASSUME-AMIRIS Comparison
 This study compares results from two agent-based electricity market models with historic market data.
 
