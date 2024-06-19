@@ -3,12 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 import math
 
-from typing import Tuple
-
 import pandas as pd
 
 
-def auto_scale(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
+def auto_scale(data: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     """
     Finds and applies a common scaling exponent of 10 for given data columns to minimise leading/trailing digits
 
@@ -22,6 +20,6 @@ def auto_scale(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     digits = math.floor(math.log10(max_value)) - 1 if max_value > 0 else 0
     exponent = digits
 
-    scaling_factor = 10 ** exponent
+    scaling_factor = 10**exponent
     label_extension = f"{10 ** exponent} " if exponent != 0 else ""
     return data / scaling_factor, label_extension

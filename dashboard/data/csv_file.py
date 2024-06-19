@@ -2,11 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 from pathlib import Path
-from typing import Dict
 
 import pandas as pd
 
-from dashboard.data import Column, TimeFormat, Model
+from dashboard.data import Column, Model, TimeFormat
 from dashboard.data.preparation import DataPreparer
 
 
@@ -15,8 +14,15 @@ class CsvFile:
 
     ERR_YEAR_MISSING = "File not read for year {} of CsvFile {}"
 
-    def __init__(self, model: Model, file: str, time_column: str, time_format: TimeFormat, separator: str,
-                 columns: Dict[Column, str]) -> None:
+    def __init__(
+        self,
+        model: Model,
+        file: str,
+        time_column: str,
+        time_format: TimeFormat,
+        separator: str,
+        columns: dict[Column, str],
+    ) -> None:
         self._model = model
         self._filename = file
         self._time_column = time_column
@@ -36,9 +42,11 @@ class CsvFile:
 
     def _read_csv_file(self, path: Path) -> pd.DataFrame:
         """Read csv file at given path assuming a 1-line header and given separator.
-         Returns a dataframe with index "TimeStamp", whose values are given in UTC hours"""
+        Returns a dataframe with index "TimeStamp", whose values are given in UTC hours"""
         df = pd.read_csv(path, sep=self._separator, header=0)
-        df["TimeStamp"] = self._convert_time_column(df[self._time_column], self._time_format)
+        df["TimeStamp"] = self._convert_time_column(
+            df[self._time_column], self._time_format
+        )
         df.drop(columns=[self._time_column], inplace=True)
         return df.set_index("TimeStamp")
 
@@ -52,7 +60,9 @@ class CsvFile:
 
         return column
 
-    def add_column(self, preparer: DataPreparer, group: str, year: int, column: Column) -> None:
+    def add_column(
+        self, preparer: DataPreparer, group: str, year: int, column: Column
+    ) -> None:
         """Adds data for given `column` and `year` to specified `group` of given `preparer`"""
         column_name = self._columns[column]
         if year not in self._data.keys():

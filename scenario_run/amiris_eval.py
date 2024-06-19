@@ -10,12 +10,19 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from queries import query_data
 
 plt.style.use("seaborn-v0_8")
 
 
-def plot_all_plots(simulation, from_date, to_date, data, latex_table=False):
+def plot_all_plots(
+    simulation: str,
+    from_date: str,
+    to_date: str,
+    data,
+    latex_table: bool = False,
+):
     base_path = Path("output", simulation)
 
     # set plot to true here to see plots inline
@@ -129,7 +136,7 @@ def plot_all_plots(simulation, from_date, to_date, data, latex_table=False):
     plt.xlabel("historic price of ENTSO-E [€/MWh]")
     plt.ylabel("simulation price at respective hour [€/MWh]")
     plt.gca().axis("equal")
-    plt.gca().set_aspect('equal', adjustable='box')
+    plt.gca().set_aspect("equal", adjustable="box")
     plt.legend(
         [
             f"AMIRIS\t    corr coef: {corref_amiris:.4f}".expandtabs(),
@@ -176,7 +183,6 @@ def plot_all_plots(simulation, from_date, to_date, data, latex_table=False):
     plt.xlabel("time")
     savefig("price_deviation")
 
-
     if latex_table:
         table_str = f"""
                 ~ & MAE & RMSE & max & min & mean & std \\\\ \hline
@@ -186,14 +192,14 @@ def plot_all_plots(simulation, from_date, to_date, data, latex_table=False):
         """
 
         table_new = (
-            """
+            r"""
         \\begin{table}[!ht]
             \centering
             \\begin{tabular}{l|l|l|l|l|l|l}%s   \end{tabular}
             \caption{Quantitative results of the price fit towards the historic dataset of Germany 2019}
             \label{tab:quantitative results}
         \end{table}
-        """
+        """  # noqa: UP031
             % table_str
         )
         print(table_new)
@@ -273,15 +279,17 @@ def plot_all_plots(simulation, from_date, to_date, data, latex_table=False):
         savefig("sample-price2")
 
 
-def results_to_csv(results):
+def results_to_csv(results: dict[str, dict[str, pd.DataFrame]]):
     for key, value in results.items():
         path = Path("output/csv", key)
         path.mkdir(parents=True, exist_ok=True)
-        for key, value in value.items():
-            val_path = Path(path, key + ".csv")
-            if isinstance(value, dict):
-                value = pd.DataFrame(value)
-            value.to_csv(val_path)
+        for val_key, val_value in value.items():
+            val_path = Path(path, val_key + ".csv")
+            if isinstance(val_value, dict):
+                return_value = pd.DataFrame(val_value)
+            else:
+                return_value = val_value
+            return_value.to_csv(val_path)
 
 
 if __name__ == "__main__":

@@ -1,14 +1,15 @@
 # SPDX-FileCopyrightText: 2024 German Aerospace Center
 #
 # SPDX-License-Identifier: Apache-2.0
-import streamlit as st
-from markdownlit import mdlit
 import pathlib as pt
-import pandas as pd
-
-from dashboard.tools.general import create_qrcode
 from base64 import b64encode
 from io import BytesIO
+
+import pandas as pd
+import streamlit as st
+from markdownlit import mdlit
+
+from dashboard.tools.general import create_qrcode
 
 
 def setup_default_tabs(dash_cfg, data, metadata, plots_cfg):

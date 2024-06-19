@@ -4,6 +4,7 @@
 import streamlit as st
 from PIL import Image
 from streamlit_option_menu import option_menu
+
 from dashboard.tools.configuration import DashboardConfiguration
 from dashboard.tools.widgets import insert_sidebar_qrcode
 

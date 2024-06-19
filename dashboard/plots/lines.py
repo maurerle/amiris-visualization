@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2024 German Aerospace Center
 #
 # SPDX-License-Identifier: Apache-2.0
-from typing import Dict
 
 import pandas as pd
 
@@ -15,21 +14,13 @@ def _default_line_options():
             "trigger": "axis",
             "axisPointer": {"animation": False},
         },
-        "axisPointer": {
-            "link": [
-                {"xAxisIndex": "all"}
-            ]
-        },
+        "axisPointer": {"link": [{"xAxisIndex": "all"}]},
         "dataZoom": [
             {
-                "type": 'slider',
+                "type": "slider",
                 "xAxisIndex": 0,
             },
-            {
-                "type": 'inside',
-                "xAxisIndex": 0,
-                "zoomOnMouseWheel": True
-            }
+            {"type": "inside", "xAxisIndex": 0, "zoomOnMouseWheel": True},
         ],
         "xAxis": {
             "nameLocation": "middle",
@@ -37,17 +28,11 @@ def _default_line_options():
         "yAxis": {
             "nameLocation": "middle",
         },
-        "toolbox": {
-            "feature": {
-                "dataZoom": {
-                    "show": True
-                }
-            }
-        },
+        "toolbox": {"feature": {"dataZoom": {"show": True}}},
     }
 
 
-def lines(data: pd.DataFrame, metadata: Dict[str, Dict[str, str]]) -> Dict:
+def lines(data: pd.DataFrame, metadata: dict[str, dict[str, str]]) -> dict:
     """
     Plots all columns from given dataframe as lines
 
@@ -67,13 +52,10 @@ def lines(data: pd.DataFrame, metadata: Dict[str, Dict[str, str]]) -> Dict:
             "type": "category",
             "data": data.index.tolist(),
         },
-        "yAxis": {
-            "type": "value"
-        },
-        "series": [{
-            "data": data[col].tolist(),
-            "type": "line",
-            "name": metadata[col]["label"]
-        } for col in data.columns],
+        "yAxis": {"type": "value"},
+        "series": [
+            {"data": data[col].tolist(), "type": "line", "name": metadata[col]["label"]}
+            for col in data.columns
+        ],
     }
     return update_options_with_overrides(_default_line_options(), options)

@@ -1,11 +1,12 @@
 # SPDX-FileCopyrightText: 2024 German Aerospace Center
 #
 # SPDX-License-Identifier: Apache-2.0
-from attr import field, define
-import cattr
-import pathlib as pt
-import json
 import collections
+import json
+import pathlib as pt
+
+import cattr
+from attr import define, field
 
 # cattr hooks
 cattr.register_structure_hook(pt.Path, lambda i, t: t(i))

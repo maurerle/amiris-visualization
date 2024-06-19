@@ -2,18 +2,20 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import streamlit as st
 import pathlib as pt
+
+import streamlit as st
+
+from dashboard.data.loaders import load_data
 from dashboard.layout.sidebar import create_default_sidebar
 from dashboard.tools import (
+    DashboardConfiguration,
     add_contact_widget,
     add_reference_widget,
-    setup_default_tabs,
-    load_tab_modules,
-    DashboardConfiguration,
     load_plots_config,
+    load_tab_modules,
+    setup_default_tabs,
 )
-from dashboard.data.loaders import load_data
 
 DASHBOARD_TITLE = "AMIRIS Dashboard"
 
