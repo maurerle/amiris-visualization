@@ -9,10 +9,16 @@ import pandas as pd
 import streamlit as st
 from markdownlit import mdlit
 
+from dashboard.tools.configuration import DashboardConfiguration
 from dashboard.tools.general import create_qrcode
 
 
-def setup_default_tabs(dash_cfg, data, metadata, plots_cfg):
+def setup_default_tabs(
+    dash_cfg: DashboardConfiguration,
+    data: dict,
+    metadata: dict,
+    plots_cfg: dict,
+):
     for itab in dash_cfg.tabs:
         if itab.id in ["references", "contacts"]:
             continue

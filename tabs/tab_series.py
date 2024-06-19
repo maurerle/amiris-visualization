@@ -16,7 +16,11 @@ def relabel_by_model(metadata: dict[str, dict[str, str]]):
         model_metadata["label"] = model
 
 
-def create(data, metadata, cfg):
+def create(
+    data: dict,
+    metadata: dict,
+    cfg: dict,
+):
     filter1, _ = st.columns([0.2, 0.8])
     with filter1:
         series_names = {v["AMIRIS"]["label"]: k for k, v in metadata.items()}

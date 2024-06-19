@@ -5,7 +5,11 @@ from pathlib import Path
 
 from dashboard.data import Column, Model
 from dashboard.data.files import FILES, CsvFile
-from dashboard.data.preparation import DataPreparer, column_metadata
+from dashboard.data.preparation import (
+    DataPreparationException,
+    DataPreparer,
+    column_metadata,
+)
 
 
 class DataReader:
@@ -14,16 +18,10 @@ class DataReader:
     def __init__(
         self,
         preparer: DataPreparer,
-        amiris_folder: Path,
-        assume_folder: Path,
-        historic_folder: Path,
+        data_folder: Path,
     ):
         self._preparer = preparer
-        self._folders = {
-            Model.AMIRIS: amiris_folder,
-            Model.ASSUME: assume_folder,
-            Model.HISTORICAL: historic_folder,
-        }
+        self._folder = data_folder
         self._files_read: dict[Model, dict[str, CsvFile]] = {
             Model.AMIRIS: {},
             Model.ASSUME: {},
@@ -137,12 +135,17 @@ class DataReader:
             year: target year to extract data for
             column: target column to extract data for
         """
-        self._preparer.init_data_group(
-            group=group,
-            key_metadata={
-                "TimeStamp": column_metadata(label="Simulation Time", unit="h"),
-            },
-        )
+        try:
+            self._preparer.init_data_group(
+                group=group,
+                key_metadata={
+                    "TimeStamp": column_metadata(label="Simulation Time", unit="h"),
+                },
+            )
+        except DataPreparationException:
+            # if group was added for different year
+            # we do not raise on duplicate group creation
+            pass
         self._get_file(Model.AMIRIS, amiris, year).add_column(
             self._preparer, group, year, column
         )
@@ -160,5 +163,5 @@ class DataReader:
             model_files[file_id] = FILES[model][file_id]
         file = model_files[file_id]
         if not file.has_data_for_year(year):
-            file.read_at(self._folders[model], year)
+            file.read_at(self._folder, year)
         return file

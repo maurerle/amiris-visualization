@@ -8,11 +8,11 @@ FILES = {
     Model.AMIRIS: {
         "DayAheadMarket": CsvFile(
             model=Model.AMIRIS,
-            file="DayAheadMarketSingleZone.csv",
-            time_column="TimeStep",
+            file="preis_amiris.csv",
+            time_column="time",
             time_format=TimeFormat.UTC,
-            separator=";",
-            columns={Column.PRICE: "ElectricityPriceInEURperMWH"},
+            separator=",",
+            columns={Column.PRICE: "amiris_price"},
         ),
         "Nuclear": CsvFile(
             model=Model.AMIRIS,
@@ -32,7 +32,7 @@ FILES = {
         ),
         "Coal": CsvFile(
             model=Model.AMIRIS,
-            file="dispatch_hard_coal.csv",
+            file="dispatch_hard coal.csv",
             time_column="time",
             time_format=TimeFormat.UTC,
             separator=",",
@@ -40,7 +40,7 @@ FILES = {
         ),
         "Gas": CsvFile(
             model=Model.AMIRIS,
-            file="dispatch_natural_gas.csv",
+            file="dispatch_natural gas.csv",
             time_column="time",
             time_format=TimeFormat.UTC,
             separator=",",
@@ -90,11 +90,11 @@ FILES = {
     Model.ASSUME: {
         "MarketMeta": CsvFile(
             model=Model.ASSUME,
-            file="market_meta.csv",
+            file="preis_assume.csv",
             time_column="time",
             time_format=TimeFormat.UTC,
             separator=",",
-            columns={Column.PRICE: "price"},
+            columns={Column.PRICE: "assume_price"},
         ),
         "Nuclear": CsvFile(
             model=Model.ASSUME,
@@ -114,7 +114,7 @@ FILES = {
         ),
         "Coal": CsvFile(
             model=Model.ASSUME,
-            file="dispatch_hard_coal.csv",
+            file="dispatch_hard coal.csv",
             time_column="time",
             time_format=TimeFormat.UTC,
             separator=",",
@@ -122,7 +122,7 @@ FILES = {
         ),
         "Gas": CsvFile(
             model=Model.ASSUME,
-            file="dispatch_natural_gas.csv",
+            file="dispatch_natural gas.csv",
             time_column="time",
             time_format=TimeFormat.UTC,
             separator=",",
@@ -172,15 +172,15 @@ FILES = {
     Model.HISTORICAL: {
         "DaPrices": CsvFile(
             model=Model.HISTORICAL,
-            file="da_prices.csv",
-            time_column="TimeStep",
+            file="preis_entsoe.csv",
+            time_column="time",
             time_format=TimeFormat.FAME,
-            separator=";",
-            columns={Column.PRICE: "ElectricityPriceInEURperMWH"},
+            separator=",",
+            columns={Column.PRICE: "entsoe_price"},
         ),
         "Dispatch": CsvFile(
             model=Model.HISTORICAL,
-            file="dispatch.csv",
+            file="dispatch_entsoe.csv",
             time_column="time",
             time_format=TimeFormat.UTC,
             separator=",",
