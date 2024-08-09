@@ -7,6 +7,7 @@
 matplotlib
 streamlit>=1.33.0
 pandas
+numpy<2
 sphinx
 cattrs
 attrs
